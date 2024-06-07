@@ -1,0 +1,128 @@
+version: '3.8'
+services:
+  mysql-customer:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: database_development
+    volumes:
+      - customer-volume:/var/lib/mysql
+    networks:
+      - mynetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -psecret" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql-vehicle:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: database_development
+    volumes:
+      - vehicle-volume:/var/lib/mysql
+    networks:
+      - mynetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -psecret" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql-workshop:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: database_development
+    volumes:
+      - workshop-volume:/var/lib/mysql
+    networks:
+      - mynetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -psecret" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:management
+    environment:
+      RABBITMQ_DEFAULT_USER: anaou
+      RABBITMQ_DEFAULT_PASS: inpt
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - mynetwork
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  webapp-container:
+    image: anaouhamza/webapp:1.0.0
+    networks:
+      - mynetwork
+    ports:
+      - "80:80"
+
+  gateway-container:
+    image: anaouhamza/gateway:1.0.0
+    networks:
+      - mynetwork
+    ports:
+      - "8080:8080"
+
+  customer-container:
+    image: anaouhamza/customer:1.0.0
+    environment:
+      DB_HOST: mysql-customer
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_NAME: database_development
+    networks:
+      - mynetwork
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql-customer:
+        condition: service_healthy
+
+  vehicle-container:
+    image: anaouhamza/vehicle:1.0.0
+    environment:
+      DB_HOST: mysql-vehicle
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_NAME: database_development
+    networks:
+      - mynetwork
+    ports:
+      - "3002:3002"
+    depends_on:
+      mysql-vehicle:
+        condition: service_healthy
+
+  workshop-container:
+    image: anaouhamza/workshop:1.0.0
+    environment:
+      DB_HOST: mysql-workshop
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_NAME: database_development
+    networks:
+      - mynetwork
+    ports:
+      - "3003:3003"
+    depends_on:
+      mysql-workshop:
+        condition: service_healthy
+
+networks:
+  mynetwork:
+    driver: bridge
+
+volumes:
+  customer-volume:
+  vehicle-volume:
+  workshop-volume:
+  rabbitmq-data:
